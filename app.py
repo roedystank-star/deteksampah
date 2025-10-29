@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 
 # Load Model
-model = tf.keras.models.load_model("model.h5")
+model = tf.keras.models.load_model("keras_model.h5")
 
 # Load Labels
 with open("labels.txt", "r") as f:
