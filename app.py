@@ -1,47 +1,37 @@
 import streamlit as st
-import tensorflow as tf
 import numpy as np
 from PIL import Image
-import os
+import tensorflow.lite as tflite
 
-st.title("♻️ Deteksi Sampah Organik & Anorganik")
-st.write("Gunakan kamera HP atau upload gambar untuk mendeteksi jenis sampah.")
+st.title("♻️ Deteksi Sampah Organik & Anorganik (TFLite Version)")
+st.write("Gunakan kamera HP atau upload foto untuk mendeteksi jenis sampah.")
 
-# Cek apakah model tersedia
-model_path = "model_sampah"
-if not os.path.exists(model_path):
-    st.error("❌ Folder model_sampah tidak ditemukan. Pastikan folder model sudah diunggah ke GitHub.")
-else:
-    # Muat model
-    model = tf.keras.models.load_model(model_path)
-    st.success("✅ Model berhasil dimuat!")
+# Muat model tflite
+interpreter = tflite.Interpreter(model_path="model_sampah.tflite")
+interpreter.allocate_tensors()
 
-    # Input gambar
-    img_camera = st.camera_input("Ambil foto sampah (gunakan kamera HP)")
-    uploaded_file = st.file_uploader("Atau upload gambar", type=["jpg", "jpeg", "png"])
+input_details = interpreter.get_input_details()
+output_details = interpreter.get_output_details()
 
-    image = None
-    if img_camera is not None:
-        image = Image.open(img_camera)
-    elif uploaded_file is not None:
-        image = Image.open(uploaded_file)
+img_camera = st.camera_input("Ambil foto sampah")
+uploaded_file = st.file_uploader("Atau upload gambar", type=["jpg", "jpeg", "png"])
 
-    if image:
-        st.image(image, caption="Gambar yang diuji", use_column_width=True)
+image = None
+if img_camera is not None:
+    image = Image.open(img_camera)
+elif uploaded_file is not None:
+    image = Image.open(uploaded_file)
 
-        # Preprocessing
-        img = image.resize((224, 224))
-        img_array = np.expand_dims(np.array(img) / 255.0, axis=0)
+if image:
+    st.image(image, caption="Gambar yang diuji", use_column_width=True)
+    img = image.resize((224, 224))
+    img_array = np.expand_dims(np.array(img) / 255.0, axis=0).astype(np.float32)
 
-        # Prediksi
-        prediction = model.predict(img_array)
-        label = ['Organik', 'Anorganik'][np.argmax(prediction)]
-        prob = float(np.max(prediction))
+    interpreter.set_tensor(input_details[0]['index'], img_array)
+    interpreter.invoke()
+    prediction = interpreter.get_tensor(output_details[0]['index'])
 
-        st.info(f"Hasil: **{label}** (kepastian {prob*100:.2f}%)")
+    label = ['Organik', 'Anorganik'][np.argmax(prediction)]
+    prob = float(np.max(prediction))
 
-        # Pesan tambahan
-        if label == 'Organik':
-            st.success("💡 Sampah organik bisa dijadikan kompos!")
-        else:
-            st.warning("♻️ Sampah anorganik sebaiknya dipilah dan didaur ulang.")
+    st.success(f"Hasil: {label} ({prob*100:.2f}%)")
