@@ -3,33 +3,33 @@ import tensorflow as tf
 import numpy as np
 from PIL import Image
 
-# Load Model
-model = tf.keras.models.load_model("keras_model.h5")
+st.title("♻️ Deteksi Sampah Organik & Anorganik")
+st.write("Gunakan kamera HP atau upload gambar sampah.")
 
-# Load Labels
-with open("labels.txt", "r") as f:
-    labels = [line.strip() for line in f.readlines()]
+# Gunakan kamera langsung
+img_camera = st.camera_input("Ambil foto sampah (gunakan kamera HP)")
 
-# UI
-st.title("♻️ Deteksi Sampah Organik / Anorganik dengan AI")
-st.write("Upload gambar sampah untuk dideteksi oleh model AI")
+# Atau upload dari file
+uploaded_file = st.file_uploader("Atau upload gambar sampah", type=["jpg", "jpeg", "png"])
 
-uploaded_file = st.file_uploader("Upload Gambar", type=["jpg", "jpeg", "png"])
+image = None
+if img_camera is not None:
+    image = Image.open(img_camera)
+elif uploaded_file is not None:
+    image = Image.open(uploaded_file)
 
-if uploaded_file is not None:
-    image = Image.open(uploaded_file).convert("RGB")
-    st.image(image, caption="Gambar yang diupload", use_column_width=True)
+if image:
+    st.image(image, caption="Gambar yang diuji", use_column_width=True)
 
-    # Preprocessing untuk prediksi
-    img = image.resize((224, 224))  # ukuran default TM
+    # Muat model
+    model = tf.keras.models.load_model("model_sampah")
+
+    # Preprocessing
+    img = image.resize((224, 224))
     img_array = np.expand_dims(np.array(img) / 255.0, axis=0)
 
-    predictions = model.predict(img_array)
-    class_index = np.argmax(predictions[0])
-    confidence = predictions[0][class_index] * 100
+    # Prediksi
+    prediction = model.predict(img_array)
+    label = ['Organik', 'Anorganik'][np.argmax(prediction)]
 
-    result = labels[class_index]
-
-    st.subheader("📌 Hasil Deteksi")
-    st.write(f"Jenis sampah: **{result}**")
-    st.write(f"Akurasi: **{confidence:.2f}%** ✅")
+    st.success(f"✅ Jenis sampah terdeteksi: **{label}**")
