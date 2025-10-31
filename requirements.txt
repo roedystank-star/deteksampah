@@ -3,3 +3,4 @@ tflite-runtime
 pillow
 numpy
 
+
