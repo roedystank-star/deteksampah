@@ -38,8 +38,8 @@ _, H, W, C = in_shape if len(in_shape) == 4 else (1,224,224,3)
 def preprocess_image(img: Image.Image):
     # Pastikan mode RGB
     img = img.convert("RGB")
-    # resize mempertahankan aspect ratio -> fill (opsional) atau langsung resize
-    img = ImageOps.fit(img, (W, H), Image.ANTIALIAS)
+    # resize mempertahankan aspect ratio (diperbarui ke Resampling.LANCZOS)
+    img = ImageOps.fit(img, (W, H), Image.Resampling.LANCZOS)
     arr = np.array(img).astype(np.float32)
     # Normalisasi sesuai Teachable Machine (biasanya /255.0)
     arr = arr / 255.0
@@ -51,7 +51,7 @@ img_file = st.camera_input("Ambil foto sampah (kamera)") or st.file_uploader("At
 
 if img_file:
     image = Image.open(img_file)
-    st.image(image, caption="Gambar yang diuji", use_column_width=True)
+    st.image(image, caption="Gambar yang diuji", use_container_width=True)
 
     # Preprocess
     input_data = preprocess_image(image)
