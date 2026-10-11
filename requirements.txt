@@ -1,6 +1,5 @@
 streamlit
-tflite-runtime
-pillow
+pandas
 numpy
-
-
+pillow
+ultralytics
